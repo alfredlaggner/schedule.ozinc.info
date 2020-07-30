@@ -53,7 +53,6 @@ class put_all_companies extends Command
 
         foreach ($customer_imports as $c) {
             $this->info($c->name);
-            $this->info($c->expiration);
             $updated = $odoo->where('id', $c->ext_id)
                 ->update('res.partner', [
                     'name' => $c->name,
