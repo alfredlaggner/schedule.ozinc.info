@@ -44,10 +44,9 @@
 
             $products = $odoo
           //      ->limit(5)
-         //       ->where('id', '=', 3909)
+    //       ->where('id', '=', 700)
                 ->fields(
                     'id',
-                    'ID',
                     'default_code',
                     'barcode',
                     'active',
@@ -67,7 +66,7 @@
                     'outgoing_qty',
                     'weight'
                 )
-                ->get('product.product');
+                ->get('product.template');
         //    \DB::table('products')->delete();
 
             for ($i = 0; $i < count($products); $i++) {
@@ -79,8 +78,10 @@
 
                 if (sizeof($categ_temp) == 2) {
                     if (!in_array(" CBD ", $categ_temp, false)) {
-                        $brand = str_replace(' ', '', $categ_temp[1]);
-                        $category = str_replace(' ', '', $categ_temp[0]);
+                        $brand = str_replace(' ', '', $categ_temp[0]);
+   //                 echo "brand1 " . $brand;
+                        $category = str_replace(' ', '', $categ_temp[1]);
+  //                               dd("categ1 " . $category);
                         if (sizeof($categ_temp) >= 3) {
                             $sub_category = str_replace(' ', '', $categ_temp[2]);
                         }
@@ -89,7 +90,10 @@
                 if (sizeof($categ_temp) >= 3) {
                     if (!in_array(" CBD ", $categ_temp, false)) {
                         $brand = str_replace(' ', '', $categ_temp[2]);
+       //                echo "brand2 " . $brand;
                         $category = str_replace(' ', '', $categ_temp[1]);
+          //              echo "categ2 " . $category;
+
                         if (sizeof($categ_temp) >= 4) {
 //        dd($categ_temp);
                             $sub_category = str_replace(' ', '', $categ_temp[3]);
@@ -128,10 +132,10 @@
                     ]
                 );
                 if ($products[$i]['active'] == 0) $this->info("not active!");
-
+//dd($products[$i]);
 
             }
-            $this->call('calc:lastsku');
+           $this->call('calc:lastsku');
            // $this->call('calc:lastbarcode');
 
         }

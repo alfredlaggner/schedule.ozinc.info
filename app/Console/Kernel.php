@@ -54,6 +54,7 @@ class Kernel extends ConsoleKernel
         'App\Console\Commands\productImages',
         'App\Console\Commands\employee_bonus',
         'App\Console\Commands\put_all_companies',
+        'App\Console\Commands\check_logs',
     ];
 
 	protected function scheduleTimezone()

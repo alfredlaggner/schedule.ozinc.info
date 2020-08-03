@@ -43,26 +43,29 @@ class calcLastSku extends Command
         $odoo = $odoo->connect();
 
         $categories = [
+            "Concentrate",
             "Accessory",
             "Edible",
             "Vape",
             "Flower",
             "Tincture",
             "Topical",
-            "Concentrate",
         ];
         $abbr = [
+            "CT",
             "AC",
             "ED",
             "VA",
             "FL",
             "TI",
             "TP",
-            "CT",
         ];
 
         for ($i = 0; $i < count($categories); $i++) {
             $counter = 0;
+            $this->info("$i = " . $i);
+            $this->info("code = " . $categories[$i] );
+
             $last_sku = DB::table('products')
                 ->orderby('code', 'desc')
                 ->where('category', '=', $categories[$i])
@@ -70,7 +73,7 @@ class calcLastSku extends Command
                 ->first();
                  $this->info("code = " . $last_sku->code );
                 $this->info("category = " . $last_sku->category );
-
+//dd($last_sku);
             $no_skus = DB::table('products')->orderby('code', 'desc')
                 ->where('category', '=', $categories[$i])
                 ->where('code', '=', '0')
@@ -82,6 +85,8 @@ class calcLastSku extends Command
                 if ($counter == 0) {
                     $counter = 1;
                 }
+                $this->info("counter= " . $counter);
+
                 foreach ($no_skus as $no_sku) {
                     //      $this->info($no_sku->ext_id);
                     $sku = $abbr[$i];
@@ -100,8 +105,11 @@ class calcLastSku extends Command
                                             ]);*/
 
                     $this->info($no_sku->ext_id . " " . $sku_number);
+
+              //      dd($last_sku);
+
                     $updated = $odoo->where('id', '=', $no_sku->ext_id)
-                        ->update('product.product',
+                        ->update('product.template',
                             [
                                 'default_code' => $sku_number,
                                 'barcode' => $sku_number
