@@ -68,6 +68,7 @@ class Payment extends Model
         'payment_type',
         'state',
         'amount',
+        'amount_taxed',
         'payment_difference',
         'multi',
         'has_invoices',

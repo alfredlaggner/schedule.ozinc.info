@@ -69,6 +69,10 @@ class getCostomers extends Command
                 'x_studio_field_DN9mZ',
                 'x_studio_field_api_id',
                 'x_studio_field_0tSf6',
+                'x_studio_reference_id',
+                'x_studio_license_type',
+                'x_studio_bcc_business_name',
+                'x_studio_territory',
                 'x_studio_field_Bwbev'
             )
             ->get('res.partner');
@@ -105,6 +109,11 @@ class getCostomers extends Command
                     'user_id' => $customers[$i]['user_id'][0],
                     'sales_person' => $customers[$i]['user_id'][1],
                     'sale_order_count' => $customers[$i]['sale_order_count'],
+                    'reference_id' => $customers[$i]['x_studio_reference_id'],
+                    'license_type' => $customers[$i]['x_studio_license_type'],
+                    'bcc_business_name' => $customers[$i]['x_studio_bcc_business_name'],
+                    'territory' => $customers[$i]['x_studio_territory'],
+
 /*                    'total_due' => $customers[$i]['total_due'],
                     'total_overdue' => $customers[$i]['total_overdue'],*/
 

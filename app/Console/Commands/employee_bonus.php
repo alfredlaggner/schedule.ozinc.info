@@ -44,7 +44,7 @@ class employee_bonus extends Command
      */
     public function handle()
     {
-        $current_month = (Carbon::now()->month);
+        $current_month = (Carbon::now()->month-1);
         $current_year = (Carbon::now()->year);
         $sps = SalesPerson::where('is_ten_ninety', false)->get();
         foreach ($sps as $sp) {
@@ -85,7 +85,7 @@ class employee_bonus extends Command
                     Payment::where('id', $payment->id)
                         ->update([
                             'comm_percent' => $bonus_percent,
-                            'commission' => $bonus_percent * $payment->amount
+                            'commission' => $bonus_percent * (($payment->amount))
                         ]);
                 }
             } elseif ($payment->invoice_date < env('BONUS_START')) {

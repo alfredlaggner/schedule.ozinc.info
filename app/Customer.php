@@ -31,6 +31,10 @@ class Customer extends Model
         'sales_person',
         'longitude',
         'latitude',
+        'reference_id',
+        'license_type',
+        'bcc_business_name',
+        'territory',
     ];
 
     public function saleinvoices()
