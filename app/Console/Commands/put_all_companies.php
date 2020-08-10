@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\CustomerImport;
+use App\CustomerCreate;
 use App\LicenseNumber;
 use Illuminate\Console\Command;
 
@@ -40,22 +41,24 @@ class put_all_companies extends Command
     public function handle()
     {
         $odoo = new \Edujugon\Laradoo\Odoo();
-/*        $odoo->username('alfred.laggner@gmail.com')
-            ->password('jahai999')
-            ->db('ozinc-production-elf-test-1317998')
-            ->host('https://ozinc-production-elf-test-1317998.dev.odoo.com')
-            ->connect();*/
+        /*        $odoo->username('alfred.laggner@gmail.com')
+                    ->password('jahai999')
+                    ->db('ozinc-production-elf-test-1329948')
+                    ->host('https://ozinc-production-elf-test-1329948.dev.odoo.com')
+                    ->connect();*/
         $odoo->connect();
-        $licenses = LicenseNumber::all();
+        //  $licenses = LicenseNumber::all();
         $i = 0;
-        $customer_imports = CustomerImport::distinct()->get();
+        $customer_creates = CustomerCreate::distinct()->get();
         //      dd($customer_imports);
 
-        foreach ($customer_imports as $c) {
+        foreach ($customer_creates as $c) {
             $this->info($c->name);
-            $updated = $odoo->where('id', $c->ext_id)
+            $id = $odoo->where('x_studio_field_mu5dT', $c->license)
                 ->update('res.partner', [
-                    'name' => $c->name,
+                    'is_company' => 1,
+
+/*                    'name' => $c->name,
                     'x_studio_field_api_id' => $c->api_id,
                     'x_studio_field_mu5dT' => $c->license,
                     'x_studio_field_0tSf6' => $c->expiration,
@@ -69,12 +72,39 @@ class put_all_companies extends Command
                     'x_studio_territory' => $c->territory,
                     'email' => $c->email,
                     'phone' => $c->phone,
-                    'x_studio_license_type' => $c->license_type
+                    'x_studio_license_type' => $c->license_type,
+                    'website' => $c->website*/
                 ]);
 
-            $this->info($updated);
+            $this->info($i . '= '. $c->license);
             $i++;
         }
-        $this->info($i);
+
+/*
+        foreach ($customer_imports as $c) {
+            $this->info($c->name);
+            $id = $odoo->create('res.partner', [
+                'name' => $c->name,
+                'x_studio_field_api_id' => $c->api_id,
+                'x_studio_field_mu5dT' => $c->license,
+                'x_studio_field_0tSf6' => $c->expiration,
+                'x_studio_reference_id' => $c->reference_id,
+                'x_studio_field_Bo5Dv' => $c->business_name,
+                'street' => $c->street,
+                'street2' => $c->street2,
+                'city' => $c->city,
+                'zip' => $c->zip,
+                'user_id' => $c->user_id,
+                'x_studio_territory' => $c->territory,
+                'email' => $c->email,
+                'phone' => $c->phone,
+                'x_studio_license_type' => $c->license_type,
+                'website' => $c->website
+            ]);
+
+            $this->info($id);
+            $i++;
+        }
+        $this->info($i);*/
     }
 }

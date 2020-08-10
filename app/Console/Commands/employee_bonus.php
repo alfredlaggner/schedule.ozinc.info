@@ -44,7 +44,7 @@ class employee_bonus extends Command
      */
     public function handle()
     {
-        $current_month = (Carbon::now()->month-1);
+        $current_month = (Carbon::now()->month - 1);
         $current_year = (Carbon::now()->year);
         $sps = SalesPerson::where('is_ten_ninety', false)->get();
         foreach ($sps as $sp) {
@@ -60,19 +60,22 @@ class employee_bonus extends Command
             );
         }
         $payments = Payment::whereNotNull('invoice_date')
+            ->select('*','payments.id as payment_id')
+            ->leftJoin('sales_persons', 'sales_persons.sales_person_id', '=', 'payments.sales_person_id')
+            ->where('sales_persons.is_ten_ninety', false)
             ->where('month_paid', $current_month)
             ->where('year_paid', $current_year)
+            ->orderby('payments.id')
             ->get();
+    //    dd($payments->toArray());
         foreach ($payments as $payment) {
-/*            $this->info($payment->sales_order);
-            $this->info($payment->sales_person_id);*/
-
             if ($payment->invoice_date >= env('BONUS_START')) {
                 $bonus = EmployeeBonus::where('month', $payment->month_invoiced)
                     ->where('year', $payment->year_invoiced)
                     ->where('sales_person_id', $payment->sales_person_id)
                     ->first();
 
+                //       dd($bonus);
 
                 if ($bonus) {
                     if ($bonus->bonus > 0) {
@@ -80,12 +83,14 @@ class employee_bonus extends Command
                     } else {
                         $bonus_percent = $bonus->base_bonus;
                     }
-
-
-                    Payment::where('id', $payment->id)
+                    $commission = $bonus_percent * $payment->amount;
+                    $this->info("id= " . $payment->payment_id);
+                    $this->info($bonus_percent);
+                    $this->info("commission= " . $commission);
+                    Payment::where('id', $payment->payment_id)
                         ->update([
                             'comm_percent' => $bonus_percent,
-                            'commission' => $bonus_percent * (($payment->amount))
+                            'commission' => $commission,
                         ]);
                 }
             } elseif ($payment->invoice_date < env('BONUS_START')) {
@@ -94,8 +99,12 @@ class employee_bonus extends Command
                         sum(commission) as sum_commission'))
                         ->where('order_number', $payment->sales_order)
                         ->first();
+                    /*                    $this->info($payment->sales_person_id);
+                                        $this->info($payment->invoice_date);
+                                        $this->info($sales_line->sum_amount);
+                                        $this->info($sales_line->sum_amount * 0.06);*/
 
-                    Payment::where('id', $payment->id)
+                    Payment::where('id', $payment->payment_id)
                         ->update([
                             'commission' => $sales_line->sum_commission
                         ]);
@@ -106,11 +115,11 @@ class employee_bonus extends Command
                         sum(amount) as sum_amount'))
                         ->where('order_number', $payment->sales_order)
                         ->first();
-                    $this->info($payment->sales_order);
-                    $this->info($payment->invoice_date);
-                    $this->info($sales_line->sum_amount);
-                    $this->info($sales_line->sum_amount * 0.06);
-                    Payment::where('id', $payment->id)
+                    /*                    $this->info($payment->sales_order);
+                                        $this->info($payment->invoice_date);
+                                        $this->info($sales_line->sum_amount);
+                                        $this->info($sales_line->sum_amount * 0.06);*/
+                    Payment::where('id', $payment->payment_id)
                         ->update([
                             'commission' => $sales_line->sum_amount * 0.06
                         ]);

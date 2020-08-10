@@ -11,7 +11,6 @@ use App\Invoice;
 use App\User;
 use App\Payment;
 use Carbon\Carbon;
-use App\Notifications\InvoiceDue;
 
 class getPayments extends Command
 {
@@ -49,8 +48,8 @@ class getPayments extends Command
         $start = new Carbon(now());
         $start = substr($start->firstOfMonth(), 0, 10);
 
-        $start = '2018-01-01';
-        // dd($start);
+        $start = '2020-06-01';
+
         $current_month = Carbon::now()->month;
 
         $odoo = new \Edujugon\Laradoo\Odoo();
@@ -60,6 +59,7 @@ class getPayments extends Command
             ->where('partner_type', '=', 'customer')
             ->where('has_invoices', '=', true)
             ->where('state', '=', 'posted')
+            //  ->where('id', '=', 9350)
             ->fields(
                 'id',
                 'name',
@@ -74,82 +74,102 @@ class getPayments extends Command
                 'move_name',
                 'has_invoices',
                 'payment_difference',
-                'state',
+                'state'
             /*                'x_studio_field_8tRY0',
                             'x_studio_field_vOTbZ'*/
             )
             ->get('account.payment');
-        //       dd($payments);
+        //        dd($payments);
         for ($i = 0; $i < count($payments); $i++) {
-            if ($payments[$i]['invoice_ids']) {
-                $invoice_id = $payments[$i]['invoice_ids'][0];
-            } else {
-                $invoice_id = 0;
-            }
-            Payment:: updateOrCreate(
-                [
-                    'ext_id' => $payments[$i]['id']
-                ],
-                [
-                    'year_paid' => Carbon::createFromFormat('Y-m-d', $payments[$i]['payment_date'])->year,
-                    'month_paid' => Carbon::createFromFormat('Y-m-d', $payments[$i]['payment_date'])->month,
-                    'name' => $payments[$i]['name'],
-                    'display_name' => $payments[$i]['display_name'],
-                    'state' => $payments[$i]['state'],
-                    'payment_type' => $payments[$i]['payment_type'],
-                    'payment_date' => $payments[$i]['payment_date'],
-                    'amount_taxed' => $payments[$i]['amount'],
-                    'amount' => ($payments[$i]['amount'])/1.27,
-                    'invoice_ids' => $invoice_id,
-                    'customer_id' => $payments[$i]['partner_id'][0],
-                    'customer_name' => $payments[$i]['partner_id'][1],
-                    'customer_type' => $payments[$i]['partner_type'],
-                    'multi' => $payments[$i]['multi'],
-                    'move_name' => $payments[$i]['move_name'],
-                    'has_invoices' => $payments[$i]['has_invoices'],
-                    'payment_difference' => $payments[$i]['payment_difference'],
-                ]
-            );
 
+            $invoices = $payments[$i]['invoice_ids'];
+            $invoice_count = sizeof($invoices);
+            $invoice_id = 0;
+
+            for ($z = 0; $z < $invoice_count; $z++) {
+                $invoice_id = $invoices[$z];
+                $this->info($invoice_id);
+
+
+                Payment:: updateOrCreate(
+                    [
+                        'ext_id' => $payments[$i]['id'],
+                        'invoice_id' => $invoice_id,
+                    ],
+                    [
+                        'year_paid' => Carbon::createFromFormat('Y-m-d', $payments[$i]['payment_date'])->year,
+                        'month_paid' => Carbon::createFromFormat('Y-m-d', $payments[$i]['payment_date'])->month,
+                        'name' => $payments[$i]['name'],
+                        'display_name' => $payments[$i]['display_name'],
+                        'state' => $payments[$i]['state'],
+                        'payment_type' => $payments[$i]['payment_type'],
+                        'payment_date' => $payments[$i]['payment_date'],
+                        /*                        'amount_taxed' => $payments[$i]['amount'],
+                                                'amount_untaxed' => ($payments[$i]['amount']) / 1.27,*/
+                        'invoice_count' => $invoice_count,
+                        'customer_id' => $payments[$i]['partner_id'][0],
+                        'customer_name' => $payments[$i]['partner_id'][1],
+                        'customer_type' => $payments[$i]['partner_type'],
+                        'multi' => $payments[$i]['multi'],
+                        'move_name' => $payments[$i]['move_name'],
+                        'has_invoices' => $payments[$i]['has_invoices'],
+                        'payment_difference' => $payments[$i]['payment_difference'],
+                    ]
+                );
+
+            }
         }
 
-       Payment::leftJoin('invoices','invoices.ext_id', '=', 'payments.invoice_ids')
+        Payment::leftJoin('invoices', 'invoices.ext_id', '=', 'payments.invoice_id')
             ->update([
                 'payments.sales_person_id' => DB::raw('invoices.sales_person_id'),
                 'payments.invoice_date' => DB::raw('invoices.invoice_date'),
                 'payments.sales_order' => DB::raw('invoices.sales_order'),
+                'payments.amount_untaxed' => DB::raw('invoices.amount_untaxed'),
+                'payments.amount_taxed' => DB::raw('invoices.amount_total'),
+                'payments.amount' => DB::raw('invoices.amount_untaxed'),
+                'payments.tax' => DB::raw('invoices.amount_tax'),
+                'payments.invoice_state' => DB::raw('invoices.state'),
             ]);
 
 
-        $payments = Payment::whereNotNull('invoice_date')->where('payment_date', '>=', $start)->get();
+        $amount = 0.00;
+        $payments = Payment::whereNotNull('invoice_date')
+            ->where('payment_date', '>=', $start)
+            ->get();
         foreach ($payments as $payment) {
-            Payment::where('ext_id', $payment->ext_id)->update([
+            $amount_due = $payment->amount_taxed + $payment->payment_difference;
+            $commission = $payment->commission;
+            if ($amount_due > 5.00) {
+                $commission = -99;
+            }
+            Payment::where('id', $payment->id)->update([
                 'year_invoiced' => Carbon::createFromFormat('Y-m-d', $payment->invoice_date)->year,
                 'month_invoiced' => Carbon::createFromFormat('Y-m-d', $payment->invoice_date)->month,
+                'commission' => $commission,
+                'amount_due' => $amount_due
             ]);
         }
 
         $query = Invoice::select(
             '*',
             'payments.amount as payments_amount',
-            'payments.invoice_ids as payments_invoice_id',
             'payments.payment_date as payments_payment_date',
-            'payments.invoice_ids as payments_invoice_id')
-            ->leftJoin('payments', 'payments.invoice_ids', '=', 'invoices.ext_id')
+            'payments.invoice_id as payments_invoice_id')
+            ->leftJoin('payments', 'payments.invoice_id', '=', 'invoices.ext_id')
             ->where('invoices.invoice_date', '>=', '2020-01-01')
             ->get();
 
         foreach ($query as $q) {
 //$this->info($q->invoice_date);
             Invoice::where('ext_id', $q->payments_invoice_id)
-                ->update([
-                    'invoices.payment_amount' => $q->payments_amount,
+                ->update(['invoices.payment_amount' => $q->payments_amount,
                     'invoices.payment_date' => $q->payments_payment_date,
-                    'invoices.payment_invoice_id' => $q->payments_invoice_id,
-                ]);
+                    'invoices.payment_invoice_id' => $q->payments_invoice_id,]);
             /*            $this->info($q->payments_payment_date);
                         $this->info($q->payments_amount);*/
         }
+
         $this->info(date_format(date_create(), 'Y-m-d H:i:s'));
 
     }

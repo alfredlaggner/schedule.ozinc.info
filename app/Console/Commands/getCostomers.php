@@ -46,8 +46,7 @@ class getCostomers extends Command
 
                 $id = $odoo->create('res.partner',['name' => 'John Odoo']);*/
 
-        $customers = $odoo->where('is_company', 1)
-            ->fields(
+        $customers = $odoo->fields(
                 'id',
                 'is_company',
                 'display_name',
@@ -56,6 +55,7 @@ class getCostomers extends Command
                 'street2',
                 'city',
                 'zip',
+                'website',
                 'phone',
                 'email',
                 'user_id',
@@ -97,6 +97,7 @@ class getCostomers extends Command
                     'street2' => $street2,
                     'city' => $customers[$i]['city'],
                     'zip' => $customers[$i]['zip'],
+                    'website' => $customers[$i]['website'],
 /*                    'latitude' => $customers[$i]['partner_latitude'],
                     'longitude' => $customers[$i]['partner_longitude'],*/
                     'phone' => $customers[$i]['phone'],

@@ -22,6 +22,7 @@ class Customer extends Model
         'street2',
         'city',
         'zip',
+        'website',
         'phone',
         'email',
         'user_id',
