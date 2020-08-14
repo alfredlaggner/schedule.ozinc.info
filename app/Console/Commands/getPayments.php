@@ -48,7 +48,7 @@ class getPayments extends Command
         $start = new Carbon(now());
         $start = substr($start->firstOfMonth(), 0, 10);
 
-        $start = '2020-06-01';
+        $start = '2020-01-01';
 
         $current_month = Carbon::now()->month;
 
@@ -138,10 +138,16 @@ class getPayments extends Command
             ->where('payment_date', '>=', $start)
             ->get();
         foreach ($payments as $payment) {
-            $amount_due = $payment->amount_taxed + $payment->payment_difference;
+            if ($payment->payment_difference === 0.00) {
+                $amount_due = 0;
+            } else {
+                $amount_due = $payment->amount_taxed + $payment->payment_difference;
+            }
+
             $commission = $payment->commission;
-            if ($amount_due > 5.00) {
-                $commission = -99;
+            if ($amount_due > 1.00) {
+                //    dd($amount_due);
+                $commission = 0.00;
             }
             Payment::where('id', $payment->id)->update([
                 'year_invoiced' => Carbon::createFromFormat('Y-m-d', $payment->invoice_date)->year,

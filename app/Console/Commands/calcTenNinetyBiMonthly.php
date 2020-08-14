@@ -62,10 +62,10 @@ class calcTenNinetyBiMonthly extends Command
                 sales_persons.is_ten_ninety as is_rep_id_ten_ninety,
                 sales_persons.name as sales_persons_name,
                 CONCAT(DATE_FORMAT(payments.payment_date,\'%Y-%m-\'),IF(DAY(payments.payment_date)<16,\'01\',\'15\')) + INTERVAL 0 DAY as bi_monthly,
-                sum(amount_untaxed) as amount,
-                count(sales_order) as count_amount
+                sum(amount) as amount,
+                count(payments.sales_order) as count_amount
                 '))
-            ->leftJoin('invoices', 'invoices.ext_id', '=', 'payments.invoice_ids')
+            ->leftJoin('invoices', 'invoices.ext_id', '=', 'payments.invoice_id')
             ->leftJoin('sales_persons', 'invoices.sales_person_id', '=', 'sales_persons.sales_person_id')
             ->whereBetween('payments.payment_date', [$paidCommissionDateFrom, $dateTo])
     //        ->where('sales_persons.is_ten_ninety', '=', 1)
@@ -145,16 +145,16 @@ class calcTenNinetyBiMonthly extends Command
         //    dd($paidCommissionDateFrom);
         $payments = Payment::select(DB::raw('*,
                 invoices.sales_order,
-                invoices.sales_person_id as rep_id,
+                payments.sales_person_id as rep_id,
                 sales_persons.is_ten_ninety as is_rep_id_ten_ninety,
                 sales_persons.name as sales_persons_name,
                 invoices.state as invoices_state,
                 invoices.invoice_date as invoices_invoice_date
                 '))
-            ->leftJoin('invoices', 'invoices.ext_id', '=', 'payments.invoice_ids')
-            ->leftJoin('sales_persons', 'invoices.sales_person_id', '=', 'sales_persons.sales_person_id')
+            ->leftJoin('invoices', 'invoices.ext_id', '=', 'payments.invoice_id')
+            ->leftJoin('sales_persons', 'payments.sales_person_id', '=', 'sales_persons.sales_person_id')
             ->whereBetween('payments.payment_date', [$paidCommissionDateFrom, $dateTo])
-     //          ->where('sales_persons.is_ten_ninety', '=', 1)
+               ->where('sales_persons.is_ten_ninety', '=', 1)
             ->orderBy('payments.payment_date')
             ->get();
         //     $this->info($paidCommissionDateFrom) ;
@@ -165,7 +165,7 @@ class calcTenNinetyBiMonthly extends Command
             $order_month = substr($payment->invoice_date, 5, 2);
             $order_year = substr($payment->invoice_date, 0, 4);
             $order_day = substr($payment->invoice_date, 8, 2);
-            //        $this->info($order_day);
+                   $this->info($order_day);
             if ($order_day < '16') {
                 $order_half = 1;
             } else {
@@ -195,7 +195,7 @@ class calcTenNinetyBiMonthly extends Command
             $order_year = substr($payment->bi_monthly, 0, 4);
             $order_day = substr($payment->bi_monthly, 9, 2);
         }
-        $this->info("yyxxx");
+        $this->info("all");
         //  $this->info(date_format(date_create(), 'U = Y-m-d H:i:s'));
 
     }

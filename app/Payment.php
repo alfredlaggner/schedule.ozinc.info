@@ -87,6 +87,8 @@ class Payment extends Model
         'sales_person_id',
         'invoice_id',
         'sales_person_id',
+        'comm_paid_at',
+        'comm_paid_by',
     ];
 
     public function invoice()
