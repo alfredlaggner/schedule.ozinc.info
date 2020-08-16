@@ -44,9 +44,9 @@ class employee_bonus extends Command
      */
     public function handle()
     {
-        $current_month = (Carbon::now()->month - 1);
+        $current_month = (Carbon::now()->month - 2);
         $current_year = (Carbon::now()->year);
-    //    $current_month = 6;
+        //    $current_month = 6;
         $sps = SalesPerson::where('is_ten_ninety', false)->get();
         foreach ($sps as $sp) {
             EmployeeBonus::updateOrCreate(
@@ -61,14 +61,14 @@ class employee_bonus extends Command
             );
         }
         $payments = Payment::whereNotNull('invoice_date')
-            ->select('*','payments.id as payment_id')
+            ->select('*', 'payments.id as payment_id')
             ->leftJoin('sales_persons', 'sales_persons.sales_person_id', '=', 'payments.sales_person_id')
             ->where('sales_persons.is_ten_ninety', false)
             ->where('month_paid', $current_month)
             ->where('year_paid', $current_year)
             ->orderby('payments.id')
             ->get();
-    //    dd($payments->toArray());
+        //    dd($payments->toArray());
         foreach ($payments as $payment) {
             if ($payment->invoice_date >= env('BONUS_START')) {
                 $bonus = EmployeeBonus::where('month', $payment->month_invoiced)
@@ -84,11 +84,9 @@ class employee_bonus extends Command
                     } else {
                         $bonus_percent = $bonus->base_bonus;
                     }
-                    if ($payment->amount_due > 1)
-                    {
+                    if ($payment->amount_due > 1) {
                         $commission = 0;
-                    } else
-                    {
+                    } else {
                         $commission = $bonus_percent * $payment->amount;
                     }
 
@@ -101,6 +99,7 @@ class employee_bonus extends Command
                             'commission' => $commission,
                             'comm_paid_at' => $bonus->comm_paid_at,
                         ]);
+                    $this->write_to_odoo($payment, $bonus_percent);
                 }
             } elseif ($payment->invoice_date < env('BONUS_START')) {
                 if ($payment->sales_person_id != 73) {
@@ -117,6 +116,7 @@ class employee_bonus extends Command
                         ->update([
                             'commission' => $sales_line->sum_commission
                         ]);
+                    $this->write_to_odoo($payment, -0.01);
 
                 } else {
                     // Ryan Cullerton
@@ -132,10 +132,31 @@ class employee_bonus extends Command
                         ->update([
                             'commission' => $sales_line->sum_amount * 0.06
                         ]);
+                    $this->write_to_odoo($payment, 0.06);
                 }
             }
-
         }
-        return;
+    }
+
+    public function write_to_odoo($payment, $comm_percent)
+    {
+        $odoo = new \Edujugon\Laradoo\Odoo();
+        $odoo->username('alfred.laggner@gmail.com')
+            ->password('jahai999')
+            ->db('ozinc-production-elf-test-1367461')
+            ->host('https://ozinc-production-elf-test-1367461.dev.odoo.com')
+            ->connect();
+
+        // $odoo->connect();
+
+        if ($payment->comm_paid_at = Carbon::now()->format('Y-m-d')) {
+            $this->info('percent= ' . $comm_percent);
+            $odoo->where('id', $payment->invoice_id)
+                ->update('account.invoice', [
+                    'x_studio_commission' => $payment->commission,
+                    'x_studio_commission_percent' => $comm_percent * 100,
+                    'x_studio_commission_paid' => $payment->comm_paid_at,
+                ]);
+        }
     }
 }
