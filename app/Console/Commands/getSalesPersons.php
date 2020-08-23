@@ -45,6 +45,8 @@ class getSalesPersons extends Command
 
         $users = $odoo
             ->where('x_studio_function', '!=', '')
+            ->where('id', '!=', 110)
+            ->where('id', '!=', 111)
             ->fields(
                 'id',
                 'name',
@@ -55,7 +57,7 @@ class getSalesPersons extends Command
                 'x_studio_1099'
             )
             ->get('res.users');
-
+// dd($users);
         for ($i = 0; $i < count($users); $i++) {
 
             $phone = "";

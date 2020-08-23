@@ -44,10 +44,11 @@ class employee_bonus extends Command
      */
     public function handle()
     {
-        $current_month = (Carbon::now()->month - 2);
+        $current_month = (Carbon::now()->month - 1);
         $current_year = (Carbon::now()->year);
         //    $current_month = 6;
         $sps = SalesPerson::where('is_ten_ninety', false)->get();
+     //   $sps = SalesPerson::get();
         foreach ($sps as $sp) {
             EmployeeBonus::updateOrCreate(
                 [
